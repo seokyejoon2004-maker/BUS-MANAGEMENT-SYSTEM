@@ -113,7 +113,6 @@ app.put('/api/buses/:id/status', (req, res) => {
     });
 });
 
-// ANZA SERVER
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0', () => {
     console.log(`Server inaendeshwa kwenye bandari (Port): ${PORT}`);
 });
