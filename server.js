@@ -13,15 +13,16 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. ANZA DATABASE YA SQLITE
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 const db = new sqlite3.Database('./database.sqlite', (err) => {
     if (err) console.error("Database connection error:", err.message);
     else console.log("Database ya SQLite imeunganishwa kikamilifu.");
 });
 
-// 2. TENGENEZA TABLES ZA DATABASE NA AKAUNTI ZA AWALI
 db.serialize(() => {
-    // Table ya Watumiaji (Users)
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -31,7 +32,6 @@ db.serialize(() => {
         region TEXT
     )`);
 
-    // Table ya Mabasi (Buses)
     db.run(`CREATE TABLE IF NOT EXISTS buses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         plate_number TEXT UNIQUE NOT NULL,
@@ -42,7 +42,6 @@ db.serialize(() => {
         status TEXT DEFAULT 'Pending Clearance'
     )`);
 
-    // Weka Msimamizi Mkuu (Super Admin) wa awali kama hayupo
     const adminEmail = "admin@usafiri.go.tz";
     db.get(`SELECT * FROM users WHERE email = ?`, [adminEmail], (err, row) => {
         if (!row) {
@@ -54,7 +53,6 @@ db.serialize(() => {
     });
 });
 
-// 3. API YA LOGIN (JWT AUTHENTICATION)
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
@@ -68,7 +66,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 4. API YA KUSAJILI WATUMIAJI WAPYA (Super Admin & Owners)
 app.post('/api/users', (req, res) => {
     const { name, email, password, role, region } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
@@ -82,7 +79,6 @@ app.post('/api/users', (req, res) => {
     );
 });
 
-// 5. API YA KULETA MABASI YOTE (READ)
 app.get('/api/buses', (req, res) => {
     db.all(`SELECT * FROM buses`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -90,7 +86,6 @@ app.get('/api/buses', (req, res) => {
     });
 });
 
-// 6. API YA KUSAJILI BASI JIPYA (CREATE)
 app.post('/api/buses', (req, res) => {
     const { plate_number, company_name, route, seats } = req.body;
     db.run(`INSERT INTO buses (plate_number, company_name, route, seats) VALUES (?, ?, ?, ?)`,
@@ -102,7 +97,6 @@ app.post('/api/buses', (req, res) => {
     );
 });
 
-// 7. API YA KUREKEBISHA HALI YA SAFARI / KIBALI (UPDATE)
 app.put('/api/buses/:id/status', (req, res) => {
     const { status } = req.body;
     const busId = req.params.id;
